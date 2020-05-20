@@ -140,7 +140,7 @@ journalctl -u kibana.service --since "YYYY-MM-DD hh:mm:ss"
 
 Time being option on first start since displaying all logs is good enough. Use ctrl c to exit.
 
-8. Configure kibana.
+9. Configure kibana.
 
 Before kibana can be accessed from a remote host, it needs to be configured. To do so, run the following command on debian or ubuntu systems (it can also be seen normally by first using cd / to navigate to the root directory):
 
@@ -170,8 +170,8 @@ To determine the version of elasticsearch enter the following command while conn
 curl http://localhost:9200
 ```
 
-To check if kibana is installed, use:
+To delete an index, use:
 
 ```
-curl http://localhost:5601
+curl -XDELETE http://localhost:9200/index_name
 ```
