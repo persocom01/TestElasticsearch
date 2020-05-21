@@ -164,6 +164,10 @@ sudo systemctl restart kibana.service
 
 The kibana web interface can be access through the browser via the address: http://aws_instance_public_dns_or_ip:5601
 
+While connected to the web interface, the management (lowest icon) on the bottom right will allow you to manage indices in elasticsearch and index patterns in kibana. The latter is imported because deleted indices will still retain their index patterns in kibana.
+
+Alternatively, creating or deleting indices can also be handled while connected to the ec2 server via ssh, or using the dev tools console in kibana. The following commands will be the ec2 command followed by the kibana console equivalent. Note though, that pasting the ec2 commands into kibana will automatically convert them to their console equivalent.
+
 1. To determine the version of elasticsearch enter the following command while connected to the ec2 server:
 
 ```
