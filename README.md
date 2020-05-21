@@ -164,14 +164,32 @@ sudo systemctl restart kibana.service
 
 The kibana web interface can be access through the browser via the address: http://aws_instance_public_dns_or_ip:5601
 
-To determine the version of elasticsearch enter the following command while connected to the ec2 server:
+1. To determine the version of elasticsearch enter the following command while connected to the ec2 server:
 
 ```
 curl http://localhost:9200
 ```
 
-To delete an index, use:
+2. List all indices:
+
+```
+curl -XGET http://localhost:9200/_cat/indices?v
+```
+
+3. To delete an index, use:
 
 ```
 curl -XDELETE http://localhost:9200/index_name
+```
+
+4. To delete all indices:
+
+```
+curl -XDELETE http://localhost:9200/_all
+```
+
+5. To delete a document:
+
+```
+curl -XDELETE http://localhost:9200/index_name/type_name/document_id
 ```
