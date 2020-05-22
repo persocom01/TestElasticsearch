@@ -148,16 +148,24 @@ Before kibana can be accessed from a remote host, it needs to be configured. To 
 sudo vim /etc/kibana/kibana.yml
 ```
 
-Go to edit mode by pressing i then uncomment and set the following line:
+Go to edit mode by pressing i then uncomment and set the following first line, as well as add the second line:
 
 ```
 server.host: "0.0.0.0"
+
+xpack.maps.showMapVisualizationTypes: true
 ```
 
-0.0.0.0 will cause kibana to be accessible from any ip, so it's practically unsecured (default localhost). Security will be another matter, but for now, exit insert mode by pressing esc, save using :w and exit using :q. :q! exits without commiting unsaved changes. Now restart kibana using:
+0.0.0.0 will cause kibana to be accessible from any ip, so it's practically unsecured (default localhost). xpack.maps.showMapVisualizationTypes: true will allow kibana to creating certain mapping visualizations by default. Security will be another matter, but for now, exit insert mode by pressing esc, save using :w and exit using :q. :q! exits without committing unsaved changes. Now restart kibana using:
 
 ```
 sudo systemctl restart kibana.service
+```
+
+10. Installing logstash.
+
+```
+sudo apt-get install kibana
 ```
 
 ## Issuing commands
@@ -168,32 +176,120 @@ While connected to the web interface, the management (lowest icon) on the bottom
 
 Alternatively, creating or deleting indices can also be handled while connected to the ec2 server via ssh, or using the dev tools console in kibana. The following commands will be the ec2 command followed by the kibana console equivalent. Note though, that pasting the ec2 commands into kibana will automatically convert them to their console equivalent.
 
+### Basic commands
+
 1. To determine the version of elasticsearch enter the following command while connected to the ec2 server:
 
 ```
 curl http://localhost:9200
 ```
 
-2. List all indices:
+2. Create an index.
+
+```
+curl -X PUT "localhost:9200/index_name?pretty"
+PUT /index_name
+```
+
+3. List all indices:
 
 ```
 curl -XGET http://localhost:9200/_cat/indices?v
+GET /_cat/indices?v
 ```
 
-3. To delete an index, use:
+4. To delete an index, use:
 
 ```
 curl -XDELETE http://localhost:9200/index_name
+DELETE /index_name
 ```
 
-4. To delete all indices:
+5. To delete all indices:
 
 ```
 curl -XDELETE http://localhost:9200/_all
+DELETE /_all
 ```
 
-5. To delete a document:
+6. To delete a document:
 
 ```
 curl -XDELETE http://localhost:9200/index_name/type_name/document_id
+DELETE /index_name/type_name/document_id
 ```
+
+### GeoIP
+
+GeoIP data can be inferred from ip addresses either when logs are ingested, or directly by enriching an existing index during reindexing (must be different index) itself.
+
+1. Enriching an existing index.
+
+First, ensure that the ingest-geoip processor plugin is installed (new versions have it included). If it's not, run the following command on aws (untested):
+
+```
+sudo bin/elasticsearch-plugin install ingest-geoip
+```
+
+The go to the dev tools console in kibana and run the following commands (some parts are probably extra, but it works anyway):
+
+```
+PUT _ingest/pipeline/geoip
+{
+  "description" : "Add geoip info",
+  "processors" : [
+    {
+      "geoip" : {
+        "field" : "field_with_ip_address_to_be_ingested",
+        "ignore_missing" : true
+      }
+    }
+  ]
+}
+```
+
+After this, a new index has to be created based on the old one with one of the fields being of the geoip datatype. To find out the old mapping, use:
+
+```
+GET /index_name/_mapping
+```
+
+After getting the mapping, create the new index using:
+
+```
+PUT /metron_logs_geoip
+{
+  paste_"mappings":{}_here
+}
+```
+
+Under mappings: properties, paste the following at the end:
+
+```
+"geoip": {
+  "type": "object",
+  "dynamic": true,
+  "properties": {
+    "location": {
+      "type": "geo_point"
+    }
+  }
+}
+```
+
+Now that the mirror index is created, populate it using the reindex api:
+
+```
+POST _reindex
+{
+  "source": {
+    "index": "src_index"
+  },
+  "dest": {
+    "index": "src_index_geoip",
+    "pipeline": "geoip"
+  }
+}
+```
+
+Next, go to management in kibana and create a new pattern based on the new geoip index. The geoip location field should automatically have the geoip datatype, which can be used in visualizations>coordinate_map>add_bucket, assuming you're set xpack.maps.showMapVisualizationTypes: true in kibana.yml earlier.
