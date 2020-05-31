@@ -6,7 +6,7 @@ An Elasticsearch testing playground.
 
 ### Elasticsearch on AWS
 
-1. Spin up a Ubuntu 18.04 m4.large AWS EC2 and configure it to accept SSH and TCP 5601 (kibana) connections from anywhere.
+1. Spin up an Ubuntu 18.04 m4.large AWS EC2 instance and configure it to accept SSH and TCP 5601 (kibana) connections from anywhere.
 
 2. Download the .pem key.
 
